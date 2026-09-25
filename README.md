@@ -22,6 +22,8 @@ In our case, the model performs **8× super-resolution**, taking **16×16-pixel*
 
 The original loss function combines multiple objectives, including the error on the predicted wavelet coefficients, a term designed to preserve high-frequency components, and the reconstruction error on the final image.
 
+![Wavelet-SRNet architecture](images/waves-srnet.png)
+
 ## Reimplementation and Modernization
 
 A significant part of the project focused on analyzing and modernizing the original implementation.
@@ -76,9 +78,8 @@ pip install -r requirements.txt
 python train.py --config configs/config_8x.yaml
 
 python test.py --config configs/config_8x.yaml --checkpoint results/8x/checkpoints/best.pth --save-images
+```
 
 ## Technical Report
 
-The [technical report](docs/wavelet-srnet-technical-report.pdf) provides a detailed description of the architecture, ArcFace-based Identity Loss, efficiency choices, and experimental protocol, while clearly distinguishing the project's contributions from the original method and from quantitative results that are yet to be documented.
-
-The [LaTeX sources and compilation instructions](docs/technical-report/README.md) are also available.
+The [technical report](docs/Wavelet-SRNet Lauro, Improta, Pirozzi) provides a detailed description of the architecture, ArcFace-based Identity Loss, efficiency choices, and experimental protocol, while clearly distinguishing the project's contributions from the original method and from quantitative results that are yet to be documented.
