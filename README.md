@@ -83,3 +83,11 @@ python test.py --config configs/config_8x.yaml --checkpoint results/8x/checkpoin
 ## Technical Report
 
 The [technical report](docs/Wavelet-SRNet Lauro, Improta, Pirozzi) provides a detailed description of the architecture, ArcFace-based Identity Loss, efficiency choices, and experimental protocol, while clearly distinguishing the project's contributions from the original method and from quantitative results that are yet to be documented.
+
+## References
+
+The original Wavelet-SRNet method is described in:
+
+> Huang, H., He, R., Sun, Z., and Tan, T. “Wavelet-SRNet: A Wavelet-Based CNN for Multi-Scale Face Super Resolution.” *Proceedings of the IEEE International Conference on Computer Vision (ICCV)*, 2017, pp. 1689–1697.
+
+
