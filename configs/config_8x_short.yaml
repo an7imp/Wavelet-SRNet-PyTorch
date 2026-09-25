@@ -1,0 +1,25 @@
+# =============================================================================
+# SHORT REAL RUN  --  a few epochs on a subset to sanity-check learning curves
+# =============================================================================
+# Confirms PSNR climbs above the bicubic baseline and timing is healthy before
+# committing to a long run.  python train.py --config configs/config_8x_short.yaml
+extends: config_8x.yaml
+
+output_dir: results/8x_short
+
+data:
+  train_max_images: 20000
+  val_max_images: 2000
+  cache:
+    mode: disk
+
+train:
+  epochs: 10
+  # batch_size inherited from the base config (128). Lower with --batch-size on OOM.
+  val_every: 1
+  save_every: 5
+  scheduler:
+    type: cosine
+    warmup_epochs: 1
+  early_stopping:
+    enabled: false

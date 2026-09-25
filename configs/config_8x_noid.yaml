@@ -1,0 +1,14 @@
+# =============================================================================
+# ABLATION: WaveletSRNet WITHOUT the ArcFace identity loss
+# =============================================================================
+# Identical to the main run (config_8x.yaml: 70 epochs, cosine anneal, batch 128,
+# same data/seed/schedule) EXCEPT identity_weight = 0. The ArcFace R100 METRIC is
+# kept on, so val_id_sim is still logged -> a clean "with vs without identity loss"
+# ablation for the paper.
+#   python train.py --config configs/config_8x_noid.yaml
+extends: config_8x.yaml
+
+output_dir: results/8x_noid
+
+loss:
+  identity_weight: 0.0        # <-- the only change: no ArcFace identity loss

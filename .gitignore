@@ -1,0 +1,69 @@
+# Ambienti virtuali
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# PyTorch e pesi del modello
+*.pth
+*.pt
+*.ckpt
+
+# Backbone / feature-extractor weights (ArcFace, VGG, wavelet .pkl):
+# scaricati on-demand o opzionali, troppo grandi per GitHub (>100 MB)
+weights/
+
+# Cartelle di output e dati
+results/
+samples/
+
+# Decoded image cache (memmap) and dataset file-list index
+.cache/
+**/.image_index.txt
+
+# Dataset (CelebA aligned/cropped — 200k+ images, do NOT commit)
+img_align_celeba/
+
+# Dataset esterno HELEN* per il test cross-dataset (immagini + maschere, grande)
+helenstar_release/
+
+# Codice originale di partenza (repo terzo, licenza non-commerciale: non ripubblicare)
+WaveletSRNet-master/
+
+# Documentazione originale / materiale di riferimento non destinato alla pubblicazione
+docs_originale/
+
+# Cestino: roba spostata dalla pulizia (checkpoint, pesi, dataset, eval) — NON pubblicare
+cestino/
+
+# Testing / tooling
+.pytest_cache/
+
+# Temporary document rendering, build tools and QA artifacts
+/tmp/
+
+# Ad-hoc benchmark/log scratch files
+bench_*.txt
+smoke*.txt
+
+# Impostazioni locali di Claude Code (non pubblicare)
+.claude/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+#7z
+Progetto-ESM.7z
+

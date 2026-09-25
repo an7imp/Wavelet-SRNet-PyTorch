@@ -1,0 +1,20 @@
+# Install PyTorch and torchvision first, choosing the build for your CPU/CUDA setup.
+# Then install this file with: python -m pip install -r requirements.txt
+# Versions are intentionally unpinned; this is not a tested environment lockfile.
+
+# Core: training, data loading and evaluation
+torch
+torchvision
+numpy
+pillow
+pyyaml
+
+# Analysis and figures: tools/stat_test.py and tools/make*_figure*.py
+scipy
+matplotlib
+
+# Perceptual evaluation: tools/eval_paper.py; optional metric during training
+lpips
+
+# Test suite
+pytest

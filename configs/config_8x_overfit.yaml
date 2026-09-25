@@ -1,0 +1,40 @@
+# =============================================================================
+# OVERFIT TEST  --  can the model memorise a handful of images?
+# =============================================================================
+# If the network CANNOT drive the loss toward zero / PSNR very high on 8 images,
+# the training pipeline is broken (wrong targets, broken gradients, ...). This is
+# the single most informative sanity check before any long run.
+#
+#   python train.py --config configs/config_8x_overfit.yaml
+#   (equivalently:  python train.py --config configs/config_8x.yaml --overfit 8)
+#
+# val == train here on purpose; augmentation is disabled so the targets are fixed.
+extends: config_8x.yaml
+
+output_dir: results/8x_overfit
+
+data:
+  overfit: 8                # train AND val use the SAME 8 images (true memorisation test)
+  hflip: false
+  random_crop: false
+  cache:
+    mode: memory
+
+train:
+  epochs: 300                # the full 75M model needs ~150+ steps to clearly beat
+                            # bicubic on 8 real faces; by ~300 it reaches ~30 dB
+  batch_size: 8
+  val_batch_size: 8
+  num_workers: 0
+  lr: 0.0005
+  weight_decay: 0.0         # overfit must MEMORISE: weight decay fights that and
+                            # would cap PSNR (~13 dB) far below what the model can reach
+  val_every: 20
+  save_every: 100000        # large: a sanity run keeps only last.pth/best.pth
+                            # (full-model checkpoints are ~860 MB each)
+  max_val_batches: null
+  log_every: 20
+  scheduler:
+    type: none
+  early_stopping:
+    enabled: false

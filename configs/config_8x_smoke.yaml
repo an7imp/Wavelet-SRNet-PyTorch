@@ -1,0 +1,35 @@
+# =============================================================================
+# SMOKE TEST  --  "does the whole pipeline run end-to-end?" (seconds, not hours)
+# =============================================================================
+# Tiny data, memory cache, a handful of steps, one epoch. Use this FIRST after
+# any change:  python train.py --config configs/config_8x_smoke.yaml
+extends: config_8x.yaml
+
+output_dir: results/8x_smoke
+
+data:
+  train_max_images: 64
+  val_max_images: 32
+  cache:
+    mode: memory          # tiny -> keep in RAM, no disk cache files
+
+train:
+  epochs: 1
+  batch_size: 16
+  val_batch_size: 16
+  num_workers: 0          # memory cache + workers would duplicate RAM
+  max_steps: 5            # only 5 optimizer steps
+  max_val_batches: 2
+  log_every: 1
+  save_every: 1
+  scheduler:
+    type: none
+  early_stopping:
+    enabled: false
+
+loss:
+  identity_weight: 0.0    # no ArcFace identity loss either -> truly zero downloads
+
+metrics:
+  arcface:
+    enabled: false        # keep the smoke test instant (no weight download / extra net)

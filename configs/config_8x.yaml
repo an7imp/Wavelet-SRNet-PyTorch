@@ -1,0 +1,144 @@
+# =============================================================================
+# Wavelet-SRNet 8x  --  SERIOUS / LONG TRAINING CONFIG  (the real-use default)
+# =============================================================================
+# This is the base config; the debug variants (smoke / overfit / short / medium)
+# inherit from it via `extends:` and only override what changes.
+#
+# Scale <-> Haar levels (the network predicts 3 * 4**levels coefficient channels
+# and reconstructs through a FIXED inverse Haar transform):
+#     scale=4  -> 2 levels -> 48  ch   (original --upscale=2)
+#     scale=8  -> 3 levels -> 192 ch   (original --upscale=3  == 8x SR)   <-- here
+#     scale=16 -> 4 levels -> 768 ch   (original --upscale=4)
+# `levels` is DERIVED from `data.scale`; you never set it directly.
+# -----------------------------------------------------------------------------
+
+seed: 42
+deterministic: false        # true = bit-reproducible but slower (debug only)
+# IMPORTANT (measured on this model): keep both of these FALSE.
+#  - cudnn_benchmark autotuning is very expensive for the branched grouped convs
+#    (100s+ at large batch) and gives no steady-state speedup here.
+#  - channels_last (NHWC) hits a slow cuDNN grouped-conv path: ~2.7x SLOWER
+#    (77 vs 207 img/s at bs=128). See OPTIMIZATION_REPORT.md section 4.
+cudnn_benchmark: false
+tf32: true                   # TF32 matmul on Ampere+ (3070/4090/A100): free speed
+channels_last: false
+output_dir: results/8x
+
+# Haar filters. null -> mathematically-generated Haar packets (exact for ALL
+# scales, no external file needed). A path may point to the original
+# `weights/wavelet_weights_c2.pkl`; it is auto-verified and silently falls back
+# to generated filters if invalid (the shipped rec16 is broken).
+wavelet_weights_path: weights/wavelet_weights_c2.pkl
+
+data:
+  dataset_root: img_align_celeba   # folder of CelebA aligned/cropped JPEGs (NOT a Colab path)
+  scale: 8                         # 8x SR: 16x16 -> 128x128
+  hr_size: 128
+  val_split: 0.1                   # reproducible split driven by `seed`
+  test_split: 0.1
+  train_max_images: null           # null = use the whole train split
+  val_max_images: null
+  hflip: true                      # horizontal-flip augmentation
+  random_crop: false               # true requires cache.size > hr_size (see below)
+
+  # Decoded cache: decode+resize every image ONCE, then read uint8 across epochs.
+  #   mode: disk   -> file-backed memmap, shared by workers (use for full CelebA)
+  #   mode: memory -> RAM uint8 (tiny subsets only; forces num_workers=0)
+  #   mode: none   -> classic on-the-fly decode every epoch (slow)
+  cache:
+    mode: disk
+    dir: .cache
+    size: 128                      # >= hr_size; set > hr_size to enable random_crop
+
+model:
+  image_channels: 3
+  embedding_channels: [64, 128, 256, 512, 1024]
+  num_embedding_blocks: 2
+  wavelet_channels: 32
+  num_branch_blocks: 1
+
+# Loss weights follow the paper: high-frequency wavelet MSE dominates, with a
+# small low-frequency term, a texture-energy term and a light image term.
+loss:
+  image_channels: 3
+  lambda_low: 0.01
+  lambda_high: 1.0
+  texture_weight: 1.0
+  image_weight: 0.1
+  # ArcFace identity loss: 1 - cos(emb(SR), emb(HR)), pushing the SR to preserve
+  # identity. Logged as loss_identity. Uses a lighter R50 backbone (identity_arch):
+  # the R100 backward graph nearly fills 12 GB and is ~3.5x slower; R50 fits at
+  # batch 128 (~9.3 GB, ~257 img/s). The R100 metric (below) is an independent
+  # evaluator. NOTE: at weight 0.1 this term was ~65% of the total loss and capped
+  # PSNR/SSIM, so it's lowered to 0.03 -> identity still clearly improves (~30% of
+  # the loss) while the wavelet reconstruction leads again.
+  identity_weight: 0.03
+  identity_arch: r50
+  texture_alpha: 1.2
+  texture_margin: 0.0
+  reduction: mean
+
+train:
+  # 70 epochs so the cosine schedule actually ANNEALS the LR within the run (the
+  # model converges by ~epoch 25-30 at constant LR; the LR-decay phase epochs
+  # ~35-70 is what refines PSNR/SSIM). A 500-epoch cosine kept LR ~constant over
+  # the useful window and never annealed. ~12 h on the RTX 4070 Ti.
+  epochs: 70
+  # batch_size sweet spot for RTX 3070 (8 GB) is 128 -> ~207 img/s @ 4.2 GB.
+  # WARNING: batch 256 reaches ~7.4 GB and falls off a VRAM cliff (allocator
+  # thrashing) down to ~40 img/s. Bigger GPUs (4090/A100): 256-1024.
+  batch_size: 128
+  val_batch_size: 128
+  # This machine has 16 GB system RAM: each DataLoader worker is a full ~600 MB
+  # Python process, so 8 workers (~5 GB) + main proc + ArcFace exhausted RAM and
+  # caused OpenBLAS / pinned-memory allocation failures. With the on-disk decoded
+  # cache, reads are cheap, so 3 workers easily feed the GPU. Raise on a machine
+  # with more RAM (32 GB+ -> 6-8 workers).
+  num_workers: 3
+  prefetch_factor: 2
+  persistent_workers: true
+  lr: 0.0002
+  betas: [0.9, 0.999]
+  weight_decay: 0.0005
+  amp: true                        # automatic mixed precision (CUDA only)
+  grad_clip_norm: null
+  data_parallel: false
+  compile: false                   # torch.compile (experimental on Windows)
+  log_every: 50
+  val_every: 1
+  # Periodic ~900 MB snapshots (disk is ample); every 20 epochs over the 70-epoch
+  # run = 3 snapshots. last.pth (every epoch, resume) + best.pth always saved too.
+  save_every: 20
+  max_steps: null                  # cap steps/epoch (smoke mode)
+  max_val_batches: 20              # validate on a fixed, fast subset of the val split
+  save_samples: true
+  num_sample_images: 6
+  scheduler:
+    type: cosine                   # none | cosine | step
+    warmup_epochs: 2
+    min_lr: 0.000001
+    step_size: 50                  # used by type=step
+    gamma: 0.5
+  early_stopping:
+    enabled: true
+    metric: psnr                   # psnr | ssim
+    patience: 20                   # generous: let the cosine anneal fully; best.pth keeps the best
+    min_delta: 0.0
+
+test:
+  batch_size: 128
+  num_workers: 3
+
+metrics:
+  lpips:
+    enabled: false                 # optional; `pip install lpips` and set true
+    net: alex
+  # ArcFace identity metric: cosine similarity between the SR output and the HR
+  # target using a pretrained IResNet face-recognition backbone (the standard
+  # face-SR "ID" number). Logged per-epoch as `val_id_sim` in metrics.csv.
+  # Self-disabling: if weights can't be obtained, training proceeds without it.
+  arcface:
+    enabled: true
+    arch: r100                     # r18 | r34 | r50 | r100  (r100=Glint360K, strongest)
+    weights: null                  # local IResNet .pth; null -> best-effort download into weights/
+    download_dir: weights
