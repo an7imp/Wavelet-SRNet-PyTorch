@@ -82,7 +82,7 @@ python test.py --config configs/config_8x.yaml --checkpoint results/8x/checkpoin
 
 ## Technical Report
 
-The [technical report](docs/Wavelet-SRNet Lauro, Improta, Pirozzi) provides a detailed description of the architecture, ArcFace-based Identity Loss, efficiency choices, and experimental protocol, while clearly distinguishing the project's contributions from the original method and from quantitative results that are yet to be documented.
+The technical report (docs/Wavelet-SRNet Lauro, Improta, Pirozzi) provides a detailed description of the architecture, ArcFace-based Identity Loss, efficiency choices, and experimental protocol, while clearly distinguishing the project's contributions from the original method and from quantitative results that are yet to be documented.
 
 ## References
 
