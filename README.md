@@ -1,6 +1,6 @@
 # Evolution of Wavelet-SRNet in PyTorch
 
-Project developed for the **Multimedia Signal Processing** course by Lauro, Improta, and Pirozzi, focused on **8× face super-resolution** through signal processing and deep learning techniques.
+Project developed by Lauro, Improta, and Pirozzi for the **Multimedia Signal Processing** course during the **2025/2026 academic year**, under the supervision of professors **Luisa Verdoliva** and **Davide Cozzolino**. The project focuses on **8× face super-resolution** through signal processing and deep learning techniques.
 
 ## Objective
 
